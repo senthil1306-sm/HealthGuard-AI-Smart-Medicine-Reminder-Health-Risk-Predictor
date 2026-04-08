@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future Simulator - HealthGuard AI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="bg-orbs"><div class="orb-1"></div><div class="orb-2"></div></div>
+    
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="logo text-gradient"><i class="fas fa-shield-heart"></i> HealthGuard</div>
+            <nav>
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="symptoms.html" class="nav-link"><i class="fas fa-stethoscope"></i> Symptom AI</a>
+                <a href="simulation.html" class="nav-link active"><i class="fas fa-dna"></i> Future Simulator</a>
+                <a href="index.html" class="nav-link" onclick="localStorage.clear()" style="margin-top: auto; color: var(--danger)"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="margin-bottom: 2rem;">
+                <h2><span class="text-gradient"><i class="fas fa-hourglass-half"></i> Future Health Simulator</span></h2>
+                <p>Advanced predictive modeling to foresee your health conditions in 6-12 months based on current lifestyle.</p>
+            </header>
+
+            <div class="dashboard-grid">
+                <div class="glass-panel col-span-1">
+                    <h3 style="margin-bottom: 1.5rem;">Lifestyle Inputs</h3>
+                    <form id="simForm" onsubmit="event.preventDefault(); runSimulation();">
+                        <div class="form-group">
+                            <label>Average Sleep Pattern</label>
+                            <select id="sleepInput" class="form-control">
+                                <option value="8">Optimal (7-9 hours)</option>
+                                <option value="6">Moderate (5-6 hours)</option>
+                                <option value="4">Poor (Less than 5 hours)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Exercise Routine</label>
+                            <select id="exerciseInput" class="form-control">
+                                <option value="regular">Regular (3+ times/week)</option>
+                                <option value="occasional">Occasional</option>
+                                <option value="none">None (Sedentary)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Diet Quality</label>
+                            <select id="dietInput" class="form-control">
+                                <option value="good">Balanced & Healthy</option>
+                                <option value="average">Average (Some junk food)</option>
+                                <option value="poor">Poor (High sugar, fast food)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="simBtn" style="width:100%">
+                            <i class="fas fa-rocket"></i> Simulate Future
+                        </button>
+                    </form>
+                </div>
+
+                <div class="glass-panel col-span-2">
+                    <h3 style="margin-bottom: 1rem;"><i class="fas fa-chart-line text-gradient"></i> Simulation Output</h3>
+                    
+                    <div id="loader" class="loader" style="margin-top: 4rem;"></div>
+                    
+                    <div id="simResult" style="display: none; text-align: center; margin-top: 2rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem; color: var(--primary);" id="simIcon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <h2 id="simRisk" style="font-size: 2rem; margin-bottom: 1rem; color: #fff;">...</h2>
+                        <p id="simMessage" style="font-size: 1.1rem; line-height: 1.6; max-width: 80%; margin: 0 auto; color: var(--text-muted);">...</p>
+                        
+                        <div style="margin-top: 2rem; display: inline-block; padding: 1rem 2rem; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                            <span style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Simulation Timeframe</span>
+                            <h4 style="color: #fff; margin-top: 0.5rem;"><i class="far fa-calendar-alt"></i> 6 Months Projection</h4>
+                        </div>
+                    </div>
+                    <div id="initText" style="text-align: center; color: var(--text-muted); padding-top: 4rem;">
+                        <i class="fas fa-robot" style="font-size: 3rem; opacity: 0.2; margin-bottom: 1rem;"></i>
+                        <p>Adjust parameters and click simulate to view your health trajectory.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Emergency Action -->
+    <button class="emergency-btn" onclick="triggerEmergency()">
+        <i class="fas fa-phone-alt"></i>
+    </button>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function runSimulation() {
+            const sleep = parseInt(document.getElementById('sleepInput').value);
+            const exercise = document.getElementById('exerciseInput').value;
+            const diet = document.getElementById('dietInput').value;
+            
+            const btn = document.getElementById('simBtn');
+            const loader = document.getElementById('loader');
+            const simResult = document.getElementById('simResult');
+            const initText = document.getElementById('initText');
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+            initText.style.display = 'none';
+            simResult.style.display = 'none';
+            loader.style.display = 'block';
+
+            const res = await api.request('/ai/simulate', 'POST', { sleep, exercise, diet });
+            
+            loader.style.display = 'none';
+            btn.innerHTML = '<i class="fas fa-rocket"></i> Simulate Future';
+            btn.disabled = false;
+            simResult.style.display = 'block';
+            
+            document.getElementById('simRisk').innerText = res.futureRisk;
+            document.getElementById('simMessage').innerText = res.message;
+            
+            const icon = document.getElementById('simIcon');
+            if(res.futureRisk.includes("Excellent")) {
+                icon.innerHTML = '<i class="fas fa-shield-alt" style="color: var(--success); text-shadow: 0 0 20px var(--success);"></i>';
+                document.getElementById('simRisk').style.color = "var(--success)";
+            } else if(res.futureRisk.includes("Warning") || res.futureRisk.includes("High")) {
+                icon.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: var(--danger); text-shadow: 0 0 20px var(--danger);"></i>';
+                document.getElementById('simRisk').style.color = "var(--danger)";
+            } else {
+                icon.innerHTML = '<i class="fas fa-info-circle" style="color: var(--warning); text-shadow: 0 0 20px var(--warning);"></i>';
+                document.getElementById('simRisk').style.color = "var(--warning)";
+            }
+        }
+        function triggerEmergency() { alert("EMERGENCY ALERT!"); }
+    </script>
+</body>
+</html>

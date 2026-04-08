@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symptom AI - HealthGuard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="bg-orbs"><div class="orb-1"></div><div class="orb-2"></div></div>
+    
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="logo text-gradient"><i class="fas fa-shield-heart"></i> HealthGuard</div>
+            <nav>
+                <a href="dashboard.html" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="symptoms.html" class="nav-link active"><i class="fas fa-stethoscope"></i> Symptom AI</a>
+                <a href="simulation.html" class="nav-link"><i class="fas fa-dna"></i> Future Simulator</a>
+                <a href="index.html" class="nav-link" onclick="localStorage.clear()" style="margin-top: auto; color: var(--danger)"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="margin-bottom: 2rem;">
+                <h2><span class="text-gradient"><i class="fas fa-brain"></i> AI Symptom Analyzer</span></h2>
+                <p>Describe what you are feeling, and our AI will predict potential risks and recommend actions.</p>
+            </header>
+
+            <div class="dashboard-grid">
+                <div class="glass-panel col-span-2">
+                    <form id="symptomForm" onsubmit="event.preventDefault(); analyzeSymptoms();">
+                        <div class="form-group">
+                            <label>Describe your symptoms in detail (e.g., "I have a severe headache and feel very stressed since morning")</label>
+                            <textarea id="symptomInput" class="form-control" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="analyzeBtn">
+                            <i class="fas fa-magic"></i> Run AI Analysis
+                        </button>
+                    </form>
+                    <div id="loader" class="loader"></div>
+                </div>
+
+                <div class="glass-panel col-span-1" id="resultPanel" style="display: none; border: 1px solid var(--primary);">
+                    <h3 style="margin-bottom: 1rem;"><i class="fas fa-file-medical-alt text-gradient"></i> AI Diagnosis</h3>
+                    <div class="card-stat">
+                        <span style="color: var(--text-muted)">Predicted Risk Level</span>
+                        <span class="value" id="riskLevelBadge">High</span>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <h4 style="color: #fff; font-size: 0.95rem;">Prediction & Analysis:</h4>
+                        <p id="predictionText" style="font-size: 0.85rem; margin-top: 0.3rem;">...</p>
+                    </div>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <h4 style="color: #fff; font-size: 0.95rem;"><i class="fas fa-user-md"></i> Recommended Action:</h4>
+                        <p id="recommendationText" style="font-size: 0.85rem; margin-top: 0.3rem; color: var(--primary);">...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Emergency Action -->
+    <button class="emergency-btn" onclick="triggerEmergency()" title="SOS Emergency Alert">
+        <i class="fas fa-phone-alt"></i>
+    </button>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function analyzeSymptoms() {
+            const input = document.getElementById('symptomInput').value;
+            const btn = document.getElementById('analyzeBtn');
+            const loader = document.getElementById('loader');
+            const resultPanel = document.getElementById('resultPanel');
+            
+            btn.style.display = 'none';
+            loader.style.display = 'block';
+            resultPanel.style.display = 'none';
+
+            const res = await api.request('/ai/symptoms', 'POST', { symptoms: input });
+            
+            loader.style.display = 'none';
+            btn.style.display = 'inline-flex';
+            resultPanel.style.display = 'block';
+            
+            // Populate
+            const riskBadge = document.getElementById('riskLevelBadge');
+            riskBadge.innerHTML = res.riskLevel;
+            riskBadge.className = 'value ' + (res.riskLevel === 'High' ? 'text-gradient' : '');
+            if(res.riskLevel === 'High') riskBadge.style.color = 'var(--danger)';
+            else if(res.riskLevel === 'Medium') riskBadge.style.color = 'var(--warning)';
+            else riskBadge.style.color = 'var(--success)';
+
+            document.getElementById('predictionText').innerText = res.prediction;
+            document.getElementById('recommendationText').innerText = res.recommendation;
+        }
+
+        async function triggerEmergency() {
+            alert("EMERGENCY SIGNAL ACTIVATED!\nSending GPS Location and Medical History to Emergency Contacts...");
+        }
+    </script>
+</body>
+</html>
